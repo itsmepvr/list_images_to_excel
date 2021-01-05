@@ -9,7 +9,7 @@ List files to an excel sheet
 """
 
 
-import os
+import os, glob
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QMessageBox
@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import * 
 from PyQt5.QtCore import *
 from os.path import expanduser
+import xlsxwriter
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -98,6 +99,7 @@ class Ui_MainWindow(object):
         self.progressBar.setStyleSheet("background-color:rgb(243, 243, 243)")
         self.progressBar.setProperty("value", 24)
         self.progressBar.setObjectName("progressBar")
+        self.progressBar.hide()
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -105,6 +107,11 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        self.filePath = "/home/itsmepvr/.local/share/Anki2/3-4 Years Primary/collection.media"
+        self.excelPath = "/home/itsmepvr/Downloads"
+        self.excelName = "files_to_list"
+        self.ext = []
+        self.convert()
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -122,10 +129,12 @@ class Ui_MainWindow(object):
         self.close()    
 
     def chooseFilesDirectory(self):
+        self.progressBar.hide()
         src_dir = QFileDialog.getExistingDirectory(None, 'Select a folder:', expanduser("~"))
         self.lineEdit.setText(src_dir)
 
     def chooseExcelDirectory(self):
+        self.progressBar.hide()
         src_dir = QFileDialog.getExistingDirectory(None, 'Select a folder:', expanduser("~"))
         self.lineEdit_2.setText(src_dir)    
 
@@ -154,7 +163,41 @@ class Ui_MainWindow(object):
         self.convert()
 
     def convert(self):
-        pass
+        files = self.getImages(self.filePath)
+        excel = os.path.join(self.excelPath, self.excelName+'.xlsx')
+        workbook = xlsxwriter.Workbook(excel)
+        worksheet = workbook.add_worksheet()
+        row = 0
+        incValue = 100/len(files)
+        progressCount = 0
+        self.progressBar.setValue(0)
+        self.progressBar.show() 
+        for fl in files:
+            worksheet.write(row, 0, fl)
+            row += 1
+            progressCount += incValue
+            self.progressBar.setValue(progressCount)
+        self.progressBar.setValue(100)    
+        workbook.close()
+        
+
+    def getImages(self, path):
+        img = []
+        files = []
+        ext = []
+        if "images" in self.ext:
+            ext = ext + ['png', 'jpg', 'gif']
+        if "audios" in self.ext:
+            ext = ext + ['mp3', 'wav']    
+        ext = ['png', 'jpg', 'gif']
+        # [files.extend(glob.glob(path + '/*.' + e)) for e in ext]   
+        # files.sort()
+        # dd = os.listdir(path)
+        # dd.sort()
+        for file in os.listdir(path):
+            if file.endswith(".png") or file.endswith(".jpg"):
+                files.append(file)        
+        return files
 
 if __name__ == "__main__":
     import sys
